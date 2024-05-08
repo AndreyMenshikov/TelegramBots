@@ -1,10 +1,13 @@
 package org.telegram.telegrambots.facilities;
 
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.config.Registry;
 import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
@@ -17,6 +20,8 @@ import org.telegram.telegrambots.facilities.proxysocketfactorys.SocksConnectionS
 
 import java.util.concurrent.TimeUnit;
 
+import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
+
 /**
  * Created by bvn13 on 17.04.2018.
  */
@@ -28,6 +33,14 @@ public class TelegramHttpClientBuilder {
                 .setConnectionManager(createConnectionManager(options))
                 .setConnectionTimeToLive(70, TimeUnit.SECONDS)
                 .setMaxConnTotal(100);
+
+        if (isNotEmpty(options.getProxyUser())) {
+            BasicCredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+            credentialsProvider.setCredentials(new AuthScope(options.getProxyHost(), options.getProxyPort()),
+                    new UsernamePasswordCredentials(options.getProxyUser(), options.getProxyPassword()));
+            httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+        }
+
         return httpClientBuilder.build();
     }
 

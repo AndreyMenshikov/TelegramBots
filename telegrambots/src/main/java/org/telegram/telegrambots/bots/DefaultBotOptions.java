@@ -32,6 +32,25 @@ public class DefaultBotOptions implements BotOptions {
     private int getUpdatesTimeout;
     private int getUpdatesLimit;
 
+    private String proxyUser;
+    private String proxyPassword;
+
+    public String getProxyUser() {
+        return proxyUser;
+    }
+
+    public void setProxyUser(String proxyUser) {
+        this.proxyUser = proxyUser;
+    }
+
+    public String getProxyPassword() {
+        return proxyPassword;
+    }
+
+    public void setProxyPassword(String proxyPassword) {
+        this.proxyPassword = proxyPassword;
+    }
+
     public enum ProxyType {
         NO_PROXY,
         HTTP,
