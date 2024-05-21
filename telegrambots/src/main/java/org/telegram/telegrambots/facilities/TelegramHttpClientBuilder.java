@@ -12,12 +12,19 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContexts;
+import org.apache.http.ssl.TrustStrategy;
 import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.facilities.proxysocketfactorys.HttpConnectionSocketFactory;
 import org.telegram.telegrambots.facilities.proxysocketfactorys.HttpSSLConnectionSocketFactory;
 import org.telegram.telegrambots.facilities.proxysocketfactorys.SocksSSLConnectionSocketFactory;
 import org.telegram.telegrambots.facilities.proxysocketfactorys.SocksConnectionSocketFactory;
 
+import javax.net.ssl.SSLContext;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.concurrent.TimeUnit;
 
 import static org.apache.commons.lang3.ObjectUtils.isNotEmpty;
@@ -44,15 +51,29 @@ public class TelegramHttpClientBuilder {
         return httpClientBuilder.build();
     }
 
-    private static HttpClientConnectionManager createConnectionManager(DefaultBotOptions options) {
+    private static HttpClientConnectionManager createConnectionManager(DefaultBotOptions options)  {
         Registry<ConnectionSocketFactory> registry;
         switch (options.getProxyType()) {
             case NO_PROXY:
                 return null;
             case HTTP:
+                SSLContext ctx = null;
+                try {
+                    ctx = SSLContexts
+                            .custom()
+                            .loadTrustMaterial(new TrustStrategy() {
+                                @Override
+                                public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+                                    return true;
+                                }
+                            })
+                            .build();
+                } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+                    throw new RuntimeException(e);
+                }
                 registry = RegistryBuilder.<ConnectionSocketFactory> create()
                         .register("http", new HttpConnectionSocketFactory())
-                        .register("https", new HttpSSLConnectionSocketFactory(SSLContexts.createSystemDefault())).build();
+                        .register("https", new HttpSSLConnectionSocketFactory(ctx)).build();
                 return new PoolingHttpClientConnectionManager(registry);
             case SOCKS4:
             case SOCKS5:
